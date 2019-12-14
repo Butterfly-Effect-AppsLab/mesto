@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  {% for line in lines %}
+    <ul id="line.line_name">
+      <li>Linename: {{ line.line_name }}</li>
+    </ul>
+  {% endfor %}
+{% endblock %}

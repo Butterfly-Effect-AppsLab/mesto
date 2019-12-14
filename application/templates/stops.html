@@ -1,0 +1,9 @@
+{% extends "layout.html" %}
+
+{% block content %}
+  {% for stop in stops %}
+    <ul id="stop.stop_name">
+      <li>Stopname: {{ stop.stop_name }}</li>
+    </ul>
+  {% endfor %}
+{% endblock %}

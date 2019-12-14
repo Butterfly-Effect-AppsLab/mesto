@@ -62,6 +62,23 @@ class Stop(db.Model):
     long = Column(Numeric(9, 6))
     alternative_name = Column(String(50))
 
+    # def __repr__(self):
+    #     return '<Stop {}>'.format(self.stop_name)
+
+    def to_json(self):
+        """
+        Return a JSON response for RESTful API GET request.
+        """
+        stop_in_json = {
+                         'id': self.id,
+                         'stop_name': self.stop_name,
+                         'zone': self.zone,
+                         'lat': self.lat,
+                         'long': self.long,
+                         'alternative_name': self.alternative_name
+                         }
+        return stop_in_json
+
 
 class Test(db.Model):
     __tablename__ = 'test'

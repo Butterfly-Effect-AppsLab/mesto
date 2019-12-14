@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_restful import Resource, Api
 
 db = SQLAlchemy()
-api = Api(app)
+# api = Api(app)
 
 
 def create_app():
