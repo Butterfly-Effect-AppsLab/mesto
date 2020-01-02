@@ -9,7 +9,6 @@ from flask_restful import Resource, Api
 
 @app.route('/stops', methods=['GET'])
 def stops():
-
     stopss = Stop.query.all()
 
     output = []
@@ -33,7 +32,7 @@ def lines():
         line_data['name'] = line.line_name
         output.append(line_data)
 
-    return jsonify({'lines': output})
+    return jsonify({'lines': output}), 200
 
 
 @app.route('/user/add', methods=['POST'])
@@ -51,26 +50,42 @@ def add_user():
 
 
 @app.route('/lines/line/<line_name>', methods=['GET'])
-def line(line_name):
-    line_1 = Line.query.filter_by(line_name=line_name).first()
-    return str(line_1)
+def get_one_line(line_name):
+
+    line = Line.query.filter_by(line_name=line_name).first()
+
+    line_data = {}
+    line_data['id'] = line.id
+    line_data['line_name'] = line.line_name
+    line_data['id_line_type'] = line.id_line_type
+
+    return jsonify({'line': line_data})
+
 
 
 @app.route('/favourites/line', methods=['POST'])
 def favourite_lines():
-    d = request.json
-    # store received data in DB
+    # id_user = request.form['id_user']
+    # id_platform = request.form['id_platform']
+    # id_line = request.form['id_line']
+    # id_direction = request.form['id_direction']
     #
-    #
+    # new_f_line = Favourite_line(id_user, id_platform, id_line, id_direction)
+    # db.session.add(new_f_line)
+    # db.session.commit()
     return "Line has been added to favourites", 201
 
 
 @app.route('/favourites/stop', methods=['POST'])
 def favourite_stops():
-    d = request.json
-    # store received data in DB
+    # id_user = request.form['id_user']
+    # id_platform = request.form['id_platform']
+    # id_line = request.form['id_line']
+    # id_direction = request.form['id_direction']
     #
-    #
+    # new_f_line = Favourite_line(id_user, id_platform, id_line, id_direction)
+    # db.session.add(new_f_line)
+    # db.session.commit()
     return "Stop has been added to favourites", 201
 
 #
