@@ -25,7 +25,7 @@ Windows:
    ------ virtual environment is activated when "(env)" on start of the line
 4. install requierd dependencies for the project
 	- change directory to project
-	- pip install --requirements (this will install all libraries listed in requirements.txt)
+	- pip install -r requirements (this will install all libraries listed in requirements.txt)
 5. run flask app
 	- set FLASK_APP=application
 	- set FLASK_ENV=development (activates real-time in-code changes)
