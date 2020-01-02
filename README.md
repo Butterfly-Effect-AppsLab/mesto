@@ -18,7 +18,8 @@ Windows:
 1. clone repository from git
 	- git clone {githubURL}
 2. create virtual environment
-	- cmd venv venv in cloned repository
+	in cmd:
+	- virtualenv venv
 3. activate virtual environment
 	- cd venv/Scripts
 	- activate
