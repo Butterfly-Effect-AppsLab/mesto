@@ -1,7 +1,7 @@
 from flask import request, render_template, make_response
 from datetime import datetime as dt
 from flask import current_app as app
-from .models import db, Users, Stop, Line
+from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform
 from flask import jsonify
 from datetime import datetime
 from flask_restful import Resource, Api
@@ -62,7 +62,6 @@ def get_one_line(line_name):
     return jsonify({'line': line_data})
 
 
-
 @app.route('/favourites/line', methods=['POST'])
 def favourite_lines():
     # id_user = request.form['id_user']
@@ -88,38 +87,51 @@ def favourite_stops():
     # db.session.commit()
     return "Stop has been added to favourites", 201
 
-#
-# @app.route('/stops', methods=['GET'])
-# def stops():
-#     return render_template('stops.html',
-#                            stops=Stop.query.all(),
-#                            title="Show Stops")
 
+@app.route('/test', methods=['GET'])
+def test():
+    ########################################################
+    # SQL Query i wish to execute:
+    # SELECT
+    #     st.stop_name,
+    #     lp.id_direction,
+    #     ld.id,
+    #     plat.platform_name,
+    #     l.line_name
+    # FROM Line_platforms lp
+    # JOIN Line_directions ld ON lp.id_direction = ld.id
+    # JOIN Platforms plat ON lp.id_platform = plat.id
+    # JOIN Lines l ON l.id = ld.id_line
+    # JOIN Stops st ON st.id = ld.id_stop
+    # WHERE l.line_name = '1'
+    # ;
 
-# @app.route('/lines', methods=['GET'])
-# def lines():
-#     return render_template('lines.html',
-#                            lines=Line.query.all(),
-#                            title="Show lines")
-#
-#
-# @app.route('/stop', methods=['GET'])
-# def stop():
-#     # stps = []
-#     wer = Stop.query.all()
-#     result_list = []
-#     for row in wer:
-#         result_list.append({
-#             'id': wer.id,
-#             'name': wer.stop_name
-#             })
-#     return row
+    ###############################
+    # this is what i have so far:
+    test_query = db.session.query(Line, LineDirection, Stop, Platform, LinePlatform)\
+        .filter(LineDirection.id == LinePlatform.id_direction)\
+        .filter(LinePlatform.id_platform == Platform.id)\
+        .filter(Line.id == LineDirection.id_line)\
+        .filter(Stop.id == LineDirection.id_stop).all()
 
-# class HelloWorld(Resource):
-#     def get(self):
-#         return {'hello' : 'world'}
-#
-# api.add_resource(HelloWorld, '/')
-#
-# wer = Stop.query.first()
-#     return wer.stop_name
+    ###############################
+    # here i want a JSON output like
+    #
+    # {
+    #     "line": {
+    #         "line_name": "39",
+    #         "direction" : "xyz",
+    #         "stops" : [
+    #             {
+    #                 "stop_name" : "zahradnicka",
+    #                 "stop_order" : 1
+    #             },
+    #             {
+    #                 "stop_name" : "asdf",
+    #                 "stop_order" : 2
+    #             }
+    #         ]
+    #     }
+    # }
+    print(test_query)
+
