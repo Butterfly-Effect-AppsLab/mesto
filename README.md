@@ -14,6 +14,8 @@ Windows:
 
 ---- Python 3.7. installation required (may need set environmental variable Python.exe from path where python was installed)
 
+00. in cmd
+	pip install virtualenv
 0. create directory
 1. clone repository from git
 	- git clone {githubURL}
@@ -26,7 +28,7 @@ Windows:
    ------ virtual environment is activated when "(env)" on start of the line
 4. install requierd dependencies for the project
 	- change directory to project
-	- pip install -r requirements (this will install all libraries listed in requirements.txt)
+	- pip install -r requirements.txt (this will install all libraries listed in requirements.txt)
 5. run flask app
 	- set FLASK_APP=application
 	- set FLASK_ENV=development (activates real-time in-code changes)
