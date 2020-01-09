@@ -77,29 +77,27 @@ def favourite_stops():
 
 @app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
 def test(line_name, line_direction):
-    linka = line_name
-    smer = line_direction
-    lines_data = []
-    datas = db.session.query(LinePlatform)
-    name = {}
-    for data in datas:
-        if data.line_direction.line.line_name == linka:
-            name['line_name'] = data.line_direction.line.line_name
-            if data.line_direction.id_stop == smer:
-                name['line_direction'] = data.line_direction.stop.stop_name
+    line, direction = (db.session.query(Line, LineDirection)
+                                 .join(Line.directions)
+                                 .filter(
+                                    Line.line_name == line_name,
+                                    LineDirection.id == line_direction)
+                                 .one())
+    line_data = {
+        'name': line.line_name,
+        'directions': direction.stop.stop_name
+    }
+
     stops = []
-    x = 1
-    for data in datas:
-        if data.line_direction.id_stop == smer and data.line_direction.line.line_name == linka:
-            x = {
-                'stop_name': data.platform.stop.stop_name,
-                'time': data.time_span,
-                'request_stop': False
-            }
-            stops.append(x)
 
-    lines_data.append(name)
-    lines_data.append(stops)
+    for platform in direction.platforms:
+        stop = {
+            'stop_name': platform.platform.stop.stop_name,
+            'stop_order': platform.platform_order
+        }
+        stops.append(stop)
 
-    return jsonify({'line': lines_data})
+    line_data['stops'] = stops
+
+    return jsonify(line_data)
 

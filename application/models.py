@@ -99,7 +99,7 @@ class LineDirection(db.Model):
     id_line = Column(ForeignKey('lines.id'), nullable=False)
     id_stop = Column(ForeignKey('stops.id'), nullable=False)
 
-    line = relationship('Line', backref='direction')
+    line = relationship('Line', backref='directions')
     stop = relationship('Stop')
 
 
@@ -127,5 +127,5 @@ class LinePlatform(db.Model):
     time_span = Column(Integer, nullable=False)
     platform_order = Column(Integer, nullable=False)
 
-    line_direction = relationship('LineDirection')
+    line_direction = relationship('LineDirection', backref='platforms')
     platform = relationship('Platform')
