@@ -99,7 +99,8 @@ def test(line_name, line_direction):
             stops.append(x)
 
     lines_data.append(name)
-    lines_data.append(stops)
+    # lines_data.append(stops)
+    name['stops'] = stops
 
-    return jsonify({'line': lines_data})
+    return jsonify(lines_data)
 
