@@ -4,7 +4,7 @@ from flask import current_app as app
 from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform
 from flask import jsonify
 from datetime import datetime
-from flask_restful import Resource, Api
+import json
 
 
 @app.route('/stops', methods=['GET'])
@@ -49,19 +49,6 @@ def add_user():
     return 'User added to DB', 201
 
 
-@app.route('/lines/line/<line_name>', methods=['GET'])
-def get_one_line(line_name):
-
-    line = Line.query.filter_by(line_name=line_name).first()
-
-    line_data = {}
-    line_data['id'] = line.id
-    line_data['line_name'] = line.line_name
-    line_data['id_line_type'] = line.id_line_type
-
-    return jsonify({'line': line_data})
-
-
 @app.route('/favourites/line', methods=['POST'])
 def favourite_lines():
     # id_user = request.form['id_user']
@@ -88,50 +75,31 @@ def favourite_stops():
     return "Stop has been added to favourites", 201
 
 
-@app.route('/test', methods=['GET'])
-def test():
-    ########################################################
-    # SQL Query i wish to execute:
-    # SELECT
-    #     st.stop_name,
-    #     lp.id_direction,
-    #     ld.id,
-    #     plat.platform_name,
-    #     l.line_name
-    # FROM Line_platforms lp
-    # JOIN Line_directions ld ON lp.id_direction = ld.id
-    # JOIN Platforms plat ON lp.id_platform = plat.id
-    # JOIN Lines l ON l.id = ld.id_line
-    # JOIN Stops st ON st.id = ld.id_stop
-    # WHERE l.line_name = '1'
-    # ;
+@app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
+def test(line_name, line_direction):
+    linka = line_name
+    smer = line_direction
+    lines_data = []
+    datas = db.session.query(LinePlatform)
+    name = {}
+    for data in datas:
+        if data.line_direction.line.line_name == linka:
+            name['line_name'] = data.line_direction.line.line_name
+            if data.line_direction.id_stop == smer:
+                name['line_direction'] = data.line_direction.stop.stop_name
+    stops = []
+    x = 1
+    for data in datas:
+        if data.line_direction.id_stop == smer and data.line_direction.line.line_name == linka:
+            x = {
+                'stop_name': data.platform.stop.stop_name,
+                'time': data.time_span,
+                'request_stop': False
+            }
+            stops.append(x)
 
-    ###############################
-    # this is what i have so far:
-    test_query = db.session.query(Line, LineDirection, Stop, Platform, LinePlatform)\
-        .filter(LineDirection.id == LinePlatform.id_direction)\
-        .filter(LinePlatform.id_platform == Platform.id)\
-        .filter(Line.id == LineDirection.id_line)\
-        .filter(Stop.id == LineDirection.id_stop).all()
+    lines_data.append(name)
+    lines_data.append(stops)
 
-    ###############################
-    # here i want a JSON output like
-    #
-    # {
-    #     "line": {
-    #         "line_name": "39",
-    #         "direction" : "xyz",
-    #         "stops" : [
-    #             {
-    #                 "stop_name" : "zahradnicka",
-    #                 "stop_order" : 1
-    #             },
-    #             {
-    #                 "stop_name" : "asdf",
-    #                 "stop_order" : 2
-    #             }
-    #         ]
-    #     }
-    # }
-    print(test_query)
+    return jsonify({'line': lines_data})
 

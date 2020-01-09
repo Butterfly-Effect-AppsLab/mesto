@@ -51,6 +51,8 @@ class Line(db.Model):
     line_name = Column(String(50), nullable=False)
     id_line_type = Column(Integer, nullable=False)
 
+    # direction = relationship('LineDirection', backref='Line')
+
 
 class Stop(db.Model):
     __tablename__ = 'stops'
@@ -97,7 +99,7 @@ class LineDirection(db.Model):
     id_line = Column(ForeignKey('lines.id'), nullable=False)
     id_stop = Column(ForeignKey('stops.id'), nullable=False)
 
-    line = relationship('Line')
+    line = relationship('Line', backref='direction')
     stop = relationship('Stop')
 
 
