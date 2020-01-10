@@ -99,8 +99,30 @@ def test(line_name, line_direction):
             stops.append(x)
 
     lines_data.append(name)
-    # lines_data.append(stops)
     name['stops'] = stops
 
     return jsonify(lines_data)
+
+
+@app.route('/stops/stop', methods=['GET'])
+def stop():
+    datas = db.session.query(LinePlatform)
+    stop_data = []
+    info = {}
+    for data in datas:
+        if data.platform.id_stop == 6:
+            info['stop_name'] = data.platform.stop.stop_name
+    lines = []
+    for data in datas:
+        if data.platform.id_stop == 6:
+            x = {
+                'line_name': data.line_direction.line.line_name,
+                'line_direction': data.line_direction.stop.stop_name
+            }
+            lines.append(x)
+    stop_data.append(info)
+    info['lines'] = lines
+    return jsonify(info)
+
+
 
