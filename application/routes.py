@@ -4,6 +4,7 @@ from flask import current_app as app
 from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType
 from flask import jsonify
 from datetime import datetime
+from sqlalchemy import and_
 import json
 
 
@@ -127,7 +128,7 @@ def momo(id_line):
     direction_tam['zastavky'] = stops
     line_stops.append(direction_tam)
 
-    line = db.session.query(LineDirection).filter(LineDirection.id_line == 1).order_by(LineDirection.id.desc()).first()
+    line = db.session.query(LineDirection).filter(LineDirection.id_line == id_line).order_by(LineDirection.id.desc()).first()
     direction_spat = {}
     direction_spat['smer'] = line.stop.stop_name
     stops2 = []
@@ -145,19 +146,26 @@ def momo(id_line):
 
 @app.route('/timetable', methods=['GET'])
 def timetable():
-    # here date and time implementation,
-    # determining if holidays or weekend
-    #
-    # for now, everything is workday -> Timetable.type == 1
-    ########################
-    # hour = datetime.datetime.now().hour
-    # min = datetime.datetime.now().minute
-    times = db.session.query(Timetable).filter(Timetable.id_line == '1',
-                                        Timetable.line_direction.has(id_stop=16),
-                                        Timetable.type == 1
-                                        )
+
+    ###############################################
+    #### daytype determination is missing #########
+    ###############################################
+
+    hour = datetime.now().hour
+    min = datetime.now().minute
+
+    def get_schedule(hour, min):
+        times = db.session.query(Timetable).filter(Timetable.id_line == '1',
+                                            Timetable.line_direction.has(id_stop=16),
+                                            Timetable.type == 1,
+                                            and_(Timetable.departure_hour >= hour, Timetable.departure_minute >= min)
+                                            ).limit(5)
+        if not times:
+            get_schedule(0, 0)
+        return times
     time_info = {}
     timetable = []
+    times = get_schedule(hour, min)
     for time in times:
         y = {
             'hour': str(time.departure_hour).zfill(2),
@@ -178,21 +186,65 @@ def timetable():
 
 @app.route('/stops/stop/<int:id_stop>', methods=['GET'])
 def get_stop(id_stop):
-    # stops = db.session.query(LinePlatform).join(LinePlatform.platform) \
-    #     .filter(LinePlatform.platform.property.mapper.class_.id_stop == 6)
-    stops = db.session.query(LinePlatform).filter(LinePlatform.platform.has(id_stop=id_stop))
+    line_platforms = db.session.query(LinePlatform).filter(LinePlatform.platform.has(id_stop=id_stop))
     stop_info = {}
-    for stop in stops:
+    for stop in line_platforms:
             stop_info['selected_stop'] = stop.platform.stop.stop_name
             break
     stop_lines = []
-    for stop in stops:
+    for stop in line_platforms:
         x = {
             'line_name': stop.line_direction.line.line_name,
             'line_direction': stop.line_direction.stop.stop_name,
         }
         stop_lines.append(x)
     stop_info['lines'] = stop_lines
+    return jsonify(stop_info)
+
+
+@app.route('/tabula', methods=['GET'])
+def tabula():
+    stop = db.session.query(Stop).filter_by(id=8).one()
+    stop_info = {
+        'selected_stop': stop.stop_name
+    }
+    stop_lines = []
+    directions = (db.session.query(LineDirection)
+                  .join(LineDirection.platforms)
+                  .join(LinePlatform.platform)
+                  .filter(Platform.id_stop == 6))
+    for d in directions:
+        line = {
+            'line_name': d.line.line_name
+        }
+        stop_lines.append(line)
+    stop_info['lines'] = stop_lines
+
+    hour = datetime.now().hour
+    min = datetime.now().minute
+
+    def get_schedule(hour, min):
+        times = db.session.query(Timetable).filter(
+                                            Timetable.platform.has(id_stop=8),
+                                            Timetable.type == 1,
+                                            and_(Timetable.departure_hour >= hour, Timetable.departure_minute >= min)
+                                            ).limit(5)
+        if not times:
+            get_schedule(0, 0)
+        return times
+    times = get_schedule(hour, min)
+    nearest = []
+    for time in times:
+        y = {
+            'hour': str(time.departure_hour).zfill(2),
+            'minute': str(time.departure_minute).zfill(2),
+            'low_rise': time.low_rise,
+            'line': time.line.line_name,
+            'line_direction': time.line_direction.stop.stop_name
+        }
+        nearest.append(y)
+    #get nearest departures from stop
+    stop_info['departures'] = nearest
     return jsonify(stop_info)
 
 
