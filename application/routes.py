@@ -1,7 +1,7 @@
 from flask import request, render_template, make_response
 from datetime import datetime as dt
 from flask import current_app as app
-from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform
+from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType
 from flask import jsonify
 from datetime import datetime
 import json
@@ -77,52 +77,123 @@ def favourite_stops():
 
 @app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
 def test(line_name, line_direction):
-    linka = line_name
-    smer = line_direction
-    lines_data = []
-    datas = db.session.query(LinePlatform)
-    name = {}
-    for data in datas:
-        if data.line_direction.line.line_name == linka:
-            name['line_name'] = data.line_direction.line.line_name
-            if data.line_direction.id_stop == smer:
-                name['line_direction'] = data.line_direction.stop.stop_name
+    line, direction = (db.session.query(Line, LineDirection)
+                       .join(Line.directions)
+                       .filter(
+        Line.line_name == line_name,
+        LineDirection.id_stop == line_direction)
+                       .one())
+    line_data = {
+        'name': line.line_name,
+        'direction': direction.stop.stop_name,
+    }
+
     stops = []
-    x = 1
-    for data in datas:
-        if data.line_direction.id_stop == smer and data.line_direction.line.line_name == linka:
-            x = {
-                'stop_name': data.platform.stop.stop_name,
-                'time': data.time_span,
-                'request_stop': False
-            }
-            stops.append(x)
+    for platform in direction.platforms:
+        stop = {
+            'stop_name': platform.platform.stop.stop_name,
+            'request_stop': platform.request_stop,
+            'time': platform.time_span
+        }
+        stops.append(stop)
 
-    lines_data.append(name)
-    name['stops'] = stops
+    line_data['stops'] = stops
 
-    return jsonify(lines_data)
+    return jsonify(line_data)
+
+# @app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
+# def test(line_name, line_direction):
+#     linka = line_name
+#     smer = line_direction
+#     lines_data = []
+#     datas = db.session.query(LinePlatform)
+#     name = {}
+#     for data in datas:
+#         if data.line_direction.line.line_name == linka:
+#             name['line_name'] = data.line_direction.line.line_name
+#             if data.line_direction.id_stop == smer:
+#                 name['line_direction'] = data.line_direction.stop.stop_name
+#     stops = []
+#     x = 1
+#     for data in datas:
+#         if data.line_direction.id_stop == smer and data.line_direction.line.line_name == linka:
+#             x = {
+#                 'stop_name': data.platform.stop.stop_name,
+#                 'time': data.time_span,
+#                 'request_stop': False
+#             }
+#             stops.append(x)
+#
+#     lines_data.append(name)
+#     name['stops'] = stops
+#
+#     return jsonify(lines_data)
 
 
-@app.route('/stops/stop', methods=['GET'])
-def stop():
-    datas = db.session.query(LinePlatform)
-    stop_data = []
-    info = {}
-    for data in datas:
-        if data.platform.id_stop == 6:
-            info['stop_name'] = data.platform.stop.stop_name
-    lines = []
-    for data in datas:
-        if data.platform.id_stop == 6:
-            x = {
-                'line_name': data.line_direction.line.line_name,
-                'line_direction': data.line_direction.stop.stop_name
-            }
-            lines.append(x)
-    stop_data.append(info)
-    info['lines'] = lines
-    return jsonify(info)
+# @app.route('/stops/stop/<int:stop_id>', methods=['GET'])
+# def stop(stop_id):
+#     datas = db.session.query(LinePlatform)
+#     stop_data = []
+#     info = {}
+#     for data in datas:
+#         if data.platform.id_stop == stop_id:
+#             info['stop_name'] = data.platform.stop.stop_name
+#     lines = []
+#     for data in datas:
+#         if data.platform.id_stop == stop_id and data.line_direction.id_stop != stop_id:
+#             x = {
+#                 'line_name': data.line_direction.line.line_name,
+#                 'line_direction': data.line_direction.stop.stop_name
+#             }
+#             lines.append(x)
+#     stop_data.append(info)
+#     info['lines'] = lines
+#     return jsonify(info)
+
+
+@app.route('/timetable', methods=['GET'])
+def timetable():
+    times = db.session.query(Timetable).filter(Timetable.platform.has(id_stop=6), Timetable.line.has(line_name='1'), Timetable.line_direction.has(id_stop=3))
+    momo = {}
+    koko = []
+    for time in times:
+        x = {
+            'hour': time.departure_hour,
+            'minute': time.departure_minute
+        }
+        koko.append(x)
+    momo['stuff'] = koko
+    return jsonify(momo)
+
+
+@app.route('/stops/stop/<int:id_stop>', methods=['GET'])
+def get_stop(id_stop):
+    # stops = db.session.query(LinePlatform).join(LinePlatform.platform) \
+    #     .filter(LinePlatform.platform.property.mapper.class_.id_stop == 6)
+    stops = db.session.query(LinePlatform).filter(LinePlatform.platform.has(id_stop=id_stop))
+    stop_info = {}
+    for stop in stops:
+            stop_info['selected_stop'] = stop.platform.stop.stop_name
+            break
+    stop_lines = []
+    for stop in stops:
+        x = {
+            'line_name': stop.line_direction.line.line_name,
+            'line_direction': stop.line_direction.stop.stop_name,
+        }
+        stop_lines.append(x)
+    stop_info['lines'] = stop_lines
+    return jsonify(stop_info)
+
+# @app.route('/adduser', methods=['POST'])
+# def add():
+#     new_user = Users(id = )
+
+
+
+
+
+
 
 
 

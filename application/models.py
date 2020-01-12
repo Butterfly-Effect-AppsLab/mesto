@@ -1,6 +1,6 @@
 from . import db
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, text
+from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, text, Boolean
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -99,8 +99,9 @@ class LineDirection(db.Model):
     id_line = Column(ForeignKey('lines.id'), nullable=False)
     id_stop = Column(ForeignKey('stops.id'), nullable=False)
 
-    line = relationship('Line', backref='direction')
-    stop = relationship('Stop')
+
+    line = relationship('Line', backref='directions')
+    stop = relationship('Stop', backref='stop_directions')
 
 
 class Platform(db.Model):
@@ -115,7 +116,7 @@ class Platform(db.Model):
     valid_from = Column(Date)
     valid_to = Column(Date)
 
-    stop = relationship('Stop')
+    stop = relationship('Stop', backref="stop_platforms")
 
 
 class LinePlatform(db.Model):
@@ -126,6 +127,33 @@ class LinePlatform(db.Model):
     id_platform = Column(ForeignKey('platforms.id'), nullable=False)
     time_span = Column(Integer, nullable=False)
     platform_order = Column(Integer, nullable=False)
+    request_stop = Column(Boolean)
+
+    line_direction = relationship('LineDirection', backref='platforms')
+    platform = relationship('Platform', backref="line_platforms")
+
+
+class Timetable(db.Model):
+    __tablename__ = 'timetable'
+
+    id = Column(BigInteger, primary_key=True)
+    id_platform = Column(ForeignKey('platforms.id'), nullable=False)
+    id_line = Column(ForeignKey('lines.id'), nullable=False)
+    id_direction = Column(ForeignKey('line_directions.id'), nullable=False)
+    departure_hour = Column(BigInteger, nullable=False)
+    departure_minute = Column(BigInteger)
+    type = Column(ForeignKey('timetable_type.indication'), nullable=False)
+    low_rise = Column('low-rise', Boolean, nullable=False)
+    request_stop = Column(Boolean)
 
     line_direction = relationship('LineDirection')
+    line = relationship('Line')
     platform = relationship('Platform')
+    timetable_type = relationship('TimetableType')
+
+
+class TimetableType(db.Model):
+    __tablename__ = 'timetable_type'
+
+    indication = Column(BigInteger, primary_key=True)
+    description = Column(String(100), nullable=False)
