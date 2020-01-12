@@ -104,59 +104,47 @@ def test(line_name, line_direction):
 
     return jsonify(line_data)
 
-# @app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
-# def test(line_name, line_direction):
-#     linka = line_name
-#     smer = line_direction
-#     lines_data = []
-#     datas = db.session.query(LinePlatform)
-#     name = {}
-#     for data in datas:
-#         if data.line_direction.line.line_name == linka:
-#             name['line_name'] = data.line_direction.line.line_name
-#             if data.line_direction.id_stop == smer:
-#                 name['line_direction'] = data.line_direction.stop.stop_name
-#     stops = []
-#     x = 1
-#     for data in datas:
-#         if data.line_direction.id_stop == smer and data.line_direction.line.line_name == linka:
-#             x = {
-#                 'stop_name': data.platform.stop.stop_name,
-#                 'time': data.time_span,
-#                 'request_stop': False
-#             }
-#             stops.append(x)
-#
-#     lines_data.append(name)
-#     name['stops'] = stops
-#
-#     return jsonify(lines_data)
+####funguje len na dva smery
+@app.route('/lines/line/<int:id_line>', methods=['GET'])
+def momo(id_line):
+    line = db.session.query(LineDirection).filter(LineDirection.id_line == id_line).first()
+    line_stops = []
+    line_info = {
+        'line_id': line.id_line,
+        'line_name': line.line.line_name
+    }
+    line_stops.append(line_info)
+    direction_tam = {}
+    direction_tam['smer'] = line.stop.stop_name
+    stops = []
+    for stop in line.platforms:
+        stop = {
+            'stop_name': stop.platform.stop.stop_name,
+            'request_stop': stop.request_stop,
+            'time': stop.time_span
+        }
+        stops.append(stop)
+    direction_tam['zastavky'] = stops
+    line_stops.append(direction_tam)
 
-
-# @app.route('/stops/stop/<int:stop_id>', methods=['GET'])
-# def stop(stop_id):
-#     datas = db.session.query(LinePlatform)
-#     stop_data = []
-#     info = {}
-#     for data in datas:
-#         if data.platform.id_stop == stop_id:
-#             info['stop_name'] = data.platform.stop.stop_name
-#     lines = []
-#     for data in datas:
-#         if data.platform.id_stop == stop_id and data.line_direction.id_stop != stop_id:
-#             x = {
-#                 'line_name': data.line_direction.line.line_name,
-#                 'line_direction': data.line_direction.stop.stop_name
-#             }
-#             lines.append(x)
-#     stop_data.append(info)
-#     info['lines'] = lines
-#     return jsonify(info)
+    line = db.session.query(LineDirection).filter(LineDirection.id_line == 1).order_by(LineDirection.id.desc()).first()
+    direction_spat = {}
+    direction_spat['smer'] = line.stop.stop_name
+    stops2 = []
+    for stop in line.platforms:
+        stop = {
+            'stop_name': stop.platform.stop.stop_name,
+            'request_stop': stop.request_stop,
+            'time': stop.time_span
+        }
+        stops2.append(stop)
+    direction_spat['zastavky'] = stops
+    line_stops.append(direction_spat)
+    return jsonify(line_stops)
 
 
 @app.route('/timetable', methods=['GET'])
 def timetable():
-    ########################
     # here date and time implementation,
     # determining if holidays or weekend
     #
@@ -207,13 +195,6 @@ def get_stop(id_stop):
     stop_info['lines'] = stop_lines
     return jsonify(stop_info)
 
-
-fav_lines_dummy = {
-    'id': 1,
-    'id_user': 12,
-    'id_platform': 99,
-    'id_direction': 1
-}
 
 
 
