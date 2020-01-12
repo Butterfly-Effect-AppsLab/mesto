@@ -9,15 +9,16 @@ import json
 
 @app.route('/stops', methods=['GET'])
 def stops():
-    stopss = Stop.query.all()
+    stops = Stop.query.all()
 
     output = []
 
-    for sstop in stopss:
-        stop_data = {}
-        stop_data['name'] = sstop.stop_name
-        output.append(stop_data)
-
+    for stop in stops:
+        x = {
+            'stop_name': stop.stop_name,
+            'stop_id': stop.id
+        }
+        output.append(x)
     return jsonify({'stops': output}), 200
 
 
@@ -155,17 +156,36 @@ def test(line_name, line_direction):
 
 @app.route('/timetable', methods=['GET'])
 def timetable():
-    times = db.session.query(Timetable).filter(Timetable.platform.has(id_stop=6), Timetable.line.has(line_name='1'), Timetable.line_direction.has(id_stop=3))
-    momo = {}
-    koko = []
+    ########################
+    # here date and time implementation,
+    # determining if holidays or weekend
+    #
+    # for now, everything is workday -> Timetable.type == 1
+    ########################
+    # hour = datetime.datetime.now().hour
+    # min = datetime.datetime.now().minute
+    times = db.session.query(Timetable).filter(Timetable.id_line == '1',
+                                        Timetable.line_direction.has(id_stop=16),
+                                        Timetable.type == 1
+                                        )
+    time_info = {}
+    timetable = []
     for time in times:
-        x = {
-            'hour': time.departure_hour,
-            'minute': time.departure_minute
+        y = {
+            'hour': str(time.departure_hour).zfill(2),
+            'minute': str(time.departure_minute).zfill(2),
+            'low_rise': time.low_rise,
+            'line': time.line.line_name
         }
-        koko.append(x)
-    momo['stuff'] = koko
-    return jsonify(momo)
+        timetable.append(y)
+    time_info['weekday'] = timetable
+    line_now = db.session.query(Line).filter_by(id=1).one()
+    stop_now = db.session.query(Stop).filter_by(id=3).one()
+    line_direction = db.session.query(LineDirection).filter_by(id_stop=16).one()
+    time_info['line_direction'] = line_direction.stop.stop_name
+    time_info['selected_line'] = line_now.line_name
+    time_info['selected_stop'] = stop_now.stop_name
+    return jsonify(time_info)
 
 
 @app.route('/stops/stop/<int:id_stop>', methods=['GET'])
@@ -187,9 +207,13 @@ def get_stop(id_stop):
     stop_info['lines'] = stop_lines
     return jsonify(stop_info)
 
-# @app.route('/adduser', methods=['POST'])
-# def add():
-#     new_user = Users(id = )
+
+fav_lines_dummy = {
+    'id': 1,
+    'id_user': 12,
+    'id_platform': 99,
+    'id_direction': 1
+}
 
 
 
