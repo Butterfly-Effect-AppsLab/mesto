@@ -28,9 +28,11 @@ def lines():
     output = []
 
     for line in lines:
-        line_data = {}
-        line_data['name'] = line.line_name
-        output.append(line_data)
+        x = {
+            'name': line.line_name,
+            'line_id': line.id
+        }
+        output.append(x)
 
     return jsonify({'lines': output}), 200
 
