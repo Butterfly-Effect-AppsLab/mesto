@@ -202,9 +202,9 @@ def get_stop(id_stop):
     return jsonify(stop_info)
 
 
-@app.route('/tabula', methods=['GET'])
-def tabula():
-    stop = db.session.query(Stop).filter_by(id=8).one()
+@app.route('/tabula/<int:stop_id>', methods=['GET'])
+def tabula(stop_id):
+    stop = db.session.query(Stop).filter_by(id=stop_id).one()
     stop_info = {
         'selected_stop': stop.stop_name
     }
@@ -212,7 +212,7 @@ def tabula():
     directions = (db.session.query(LineDirection)
                   .join(LineDirection.platforms)
                   .join(LinePlatform.platform)
-                  .filter(Platform.id_stop == 6))
+                  .filter(Platform.id_stop == stop_id))
     for d in directions:
         line = {
             'line_name': d.line.line_name
@@ -225,7 +225,7 @@ def tabula():
 
     def get_schedule(hour, min):
         times = db.session.query(Timetable).filter(
-                                            Timetable.platform.has(id_stop=8),
+                                            Timetable.platform.has(id_stop=stop_id),
                                             Timetable.type == 1,
                                             and_(Timetable.departure_hour >= hour, Timetable.departure_minute >= min)
                                             ).limit(5)
