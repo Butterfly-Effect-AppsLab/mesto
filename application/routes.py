@@ -1,10 +1,10 @@
-from flask import request, render_template, make_response
+from flask import request, render_template, make_response, Response
 from datetime import datetime as dt
 from flask import current_app as app
 from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType
 from flask import jsonify
 from datetime import datetime
-from sqlalchemy import and_
+from sqlalchemy import and_, desc, text
 import json
 
 
@@ -141,7 +141,17 @@ def momo(id_line):
         stops2.append(stop)
     direction_spat['zastavky'] = stops
     line_stops.append(direction_spat)
+
     return jsonify(line_stops)
+
+@app.route("/")
+def home():
+    resp = make_response(jsonify({'some': 'data'}))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
+    x = {
+        'some': 'data'
+    }
+    return resp
 
 
 @app.route('/timetable', methods=['GET'])
@@ -226,11 +236,9 @@ def tabula(stop_id):
     def get_schedule(hour, min):
         times = db.session.query(Timetable).filter(
                                             Timetable.platform.has(id_stop=stop_id),
-                                            Timetable.type == 1,
-                                            and_(Timetable.departure_hour >= hour, Timetable.departure_minute >= min)
-                                            ).limit(5)
-        if not times:
-            get_schedule(0, 0)
+                                            Timetable.type == 1).order_by(text(
+                '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
+                                            .params(hour=hour,min=min).limit(5)
         return times
     times = get_schedule(hour, min)
     nearest = []
