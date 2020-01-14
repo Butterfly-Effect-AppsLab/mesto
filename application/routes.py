@@ -20,7 +20,10 @@ def stops():
             'stop_id': stop.id
         }
         output.append(x)
-    return jsonify({'stops': output}), 200
+    # return jsonify({'stops': output}), 200
+    response = make_response(jsonify({'stops': output}))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @app.route('/lines', methods=['GET'])
@@ -113,7 +116,11 @@ def test(line_name, line_direction):
 
     line_data['stops'] = stops
 
-    return jsonify(line_data)
+    # return jsonify(line_data)
+    response = make_response(jsonify(line_data))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 
 ####funguje len na dva smery
 @app.route('/lines/line/<int:id_line>', methods=['GET'])
@@ -152,7 +159,10 @@ def momo(id_line):
     direction_spat['zastavky'] = stops
     line_stops.append(direction_spat)
 
-    return jsonify(line_stops)
+    # return jsonify(line_stops)
+    response = make_response(jsonify(line_stops))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 @app.route("/")
 def home():
@@ -201,7 +211,10 @@ def timetable():
     time_info['line_direction'] = line_direction.stop.stop_name
     time_info['selected_line'] = line_now.line_name
     time_info['selected_stop'] = stop_now.stop_name
-    return jsonify(time_info)
+    # return jsonify(time_info)
+    response = make_response(jsonify(time_info))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @app.route('/stops/stop/<int:id_stop>', methods=['GET'])
@@ -219,7 +232,10 @@ def get_stop(id_stop):
         }
         stop_lines.append(x)
     stop_info['lines'] = stop_lines
-    return jsonify(stop_info)
+    # return jsonify(stop_info)
+    response = make_response(jsonify(stop_info))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 @app.route('/tabula/<int:stop_id>', methods=['GET'])
@@ -263,7 +279,10 @@ def tabula(stop_id):
         nearest.append(y)
     #get nearest departures from stop
     stop_info['departures'] = nearest
-    return jsonify(stop_info)
+    # return jsonify(stop_info)
+    response = make_response(jsonify(stop_info))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 
