@@ -28,44 +28,48 @@ def stops():
 
 @app.route('/lines', methods=['GET'])
 def lines():
-    # lines = Line.query.all()
-    #
-    # output = []
-    #
-    # for line in lines:
-    #     x = {
-    #         'name': line.line_name,
-    #         'line_id': line.id
-    #     }
-    #     output.append(x)
-    #     # return jsonify({'lines': output}), 200
-    # response = make_response(jsonify({'lines': output}))
-    # response.headers['Access-Control-Allow-Origin'] = '*'
-    # return response
-
-    lines = LineDirection.query.all()
-
-    output = []
-
-    for line in lines:
+    linky = db.session.query(Line)
+    data = []
+    for linka in linky:
+        smer = []
+        current_line = linka.id
         x = {
-            'name': line.line.line_name,
-            'line_id': line.line.id,
-            'line_direction': line.stop.stop_name
+            'id': linka.id,
+            'name': linka.line_name
         }
-        output.append(x)
-        # return jsonify({'lines': output}), 200
-    response = make_response(jsonify({'lines': output}))
+        # data.append(x)
+        for l in linka.directions:
+            if l.id_line == current_line:
+                y = l.stop.stop_name
+                smer.append(y)
+        x['directions'] = smer
+        data.append(x)
+    response = make_response(jsonify(data))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
 
-    # resp = make_response(jsonify({'some': 'data'}))
-    # resp.headers['Access-Control-Allow-Origin'] = '*'
-    # x = {
-    #     'some': 'data'
-    # }
-    # return resp
+# @app.route('/asdf', methods=['GET'])
+# def asdf():
+#     linky = db.session.query(Line)
+#     data = []
+#     for linka in linky:
+#         smer = []
+#         current_line = linka.id
+#         x = {
+#             'id': linka.id,
+#             'name': linka.line_name
+#         }
+#         # data.append(x)
+#         for l in linka.directions:
+#             if l.id_line == current_line:
+#                 y = l.stop.stop_name
+#                 smer.append(y)
+#         x['smer'] = smer
+#         data.append(x)
+#     return jsonify(data)
+
+
 
 
 @app.route('/user/add', methods=['POST'])
