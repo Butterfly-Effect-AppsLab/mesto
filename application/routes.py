@@ -35,8 +35,18 @@ def lines():
             'line_id': line.id
         }
         output.append(x)
+        # return jsonify({'lines': output}), 200
+    response = make_response(jsonify({'lines': output}))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
-    return jsonify({'lines': output}), 200
+
+    # resp = make_response(jsonify({'some': 'data'}))
+    # resp.headers['Access-Control-Allow-Origin'] = '*'
+    # x = {
+    #     'some': 'data'
+    # }
+    # return resp
 
 
 @app.route('/user/add', methods=['POST'])
