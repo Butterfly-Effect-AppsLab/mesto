@@ -28,14 +28,30 @@ def stops():
 
 @app.route('/lines', methods=['GET'])
 def lines():
-    lines = Line.query.all()
+    # lines = Line.query.all()
+    #
+    # output = []
+    #
+    # for line in lines:
+    #     x = {
+    #         'name': line.line_name,
+    #         'line_id': line.id
+    #     }
+    #     output.append(x)
+    #     # return jsonify({'lines': output}), 200
+    # response = make_response(jsonify({'lines': output}))
+    # response.headers['Access-Control-Allow-Origin'] = '*'
+    # return response
+
+    lines = LineDirection.query.all()
 
     output = []
 
     for line in lines:
         x = {
-            'name': line.line_name,
-            'line_id': line.id
+            'name': line.line.line_name,
+            'line_id': line.line.id,
+            'line_direction': line.stop.stop_name
         }
         output.append(x)
         # return jsonify({'lines': output}), 200
