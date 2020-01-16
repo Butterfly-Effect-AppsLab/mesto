@@ -11,5 +11,5 @@ class Config:
     DEBUG = True
 
     # Database
-    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:postgres@db:5432/mesto-dev'
+    SQLALCHEMY_DATABASE_URI = 'postgresql://postgres:7fyQ2CPJWTvdYh@mesto-db-dev.c2nxiu4tdbzw.us-east-1.rds.amazonaws.com:5432/mesto-dev'
     SQLALCHEMY_TRACK_MODIFICATIONS = False
