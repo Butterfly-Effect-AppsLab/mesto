@@ -4,7 +4,7 @@ from flask import current_app as app
 from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType
 from flask import jsonify
 from datetime import datetime
-from sqlalchemy import and_, desc, text
+from sqlalchemy import and_, desc, text, distinct
 import json
 
 
@@ -149,7 +149,8 @@ def momo(id_line):
     }
     line_stops.append(line_info)
     direction_tam = {}
-    direction_tam['smer'] = line.stop.stop_name
+    direction_tam['direction'] = line.stop.stop_name
+    direction_tam['id_direction'] = line.id_stop
     stops = []
     for stop in line.platforms:
         stop = {
@@ -158,12 +159,13 @@ def momo(id_line):
             'time': stop.time_span
         }
         stops.append(stop)
-    direction_tam['zastavky'] = stops
+    direction_tam['stops_list'] = stops
     line_stops.append(direction_tam)
 
     line = db.session.query(LineDirection).filter(LineDirection.id_line == id_line).order_by(LineDirection.id.desc()).first()
     direction_spat = {}
-    direction_spat['smer'] = line.stop.stop_name
+    direction_spat['direction'] = line.stop.stop_name
+    direction_spat['direction_id'] = line.id_stop
     stops2 = []
     for stop in line.platforms:
         stop = {
@@ -172,7 +174,7 @@ def momo(id_line):
             'time': stop.time_span
         }
         stops2.append(stop)
-    direction_spat['zastavky'] = stops
+    direction_spat['stops_list'] = stops
     line_stops.append(direction_spat)
 
     # return jsonify(line_stops)
@@ -202,36 +204,26 @@ def timetable():
     #### daytype determination is missing #########
     ###############################################
 
-    hour = datetime.now().hour
-    min = datetime.now().minute
-
-    def get_schedule(hour, min):
-        times = db.session.query(Timetable).filter(Timetable.id_line == '1',
-                                            Timetable.line_direction.has(id_stop=16),
-                                            Timetable.type == 1,
-                                            and_(Timetable.departure_hour >= hour, Timetable.departure_minute >= min)
-                                            ).limit(5)
-        if not times:
-            get_schedule(0, 0)
-        return times
+    times = db.session.query(Timetable).filter(Timetable.id_line == '1',
+                                               Timetable.line_direction.has(id_stop=16),
+                                               Timetable.platform.has(id_stop=3),
+                                               Timetable.type == 1)
     time_info = {}
-    timetable = []
-    times = get_schedule(hour, min)
+    timetable = {}
     for time in times:
-        y = {
-            'hour': str(time.departure_hour).zfill(2),
-            'minute': str(time.departure_minute).zfill(2),
-            'low_rise': time.low_rise,
-            'line': time.line.line_name
-        }
-        timetable.append(y)
+        str_hour = str(time.departure_hour).zfill(2)
+        str_minute = str(time.departure_minute).zfill(2)
+        if (str_hour) not in timetable:
+            timetable[str_hour] = []
+        timetable[str_hour].append(str_minute)
+    timetable = [{'hour': hour, 'minutes': minutes} for hour, minutes in timetable.items()]
     time_info['weekday'] = timetable
-    line_now = db.session.query(Line).filter_by(id=1).one()
-    stop_now = db.session.query(Stop).filter_by(id=3).one()
-    line_direction = db.session.query(LineDirection).filter_by(id_stop=16).one()
-    time_info['line_direction'] = line_direction.stop.stop_name
-    time_info['selected_line'] = line_now.line_name
-    time_info['selected_stop'] = stop_now.stop_name
+    # line_now = db.session.query(Line).filter_by(id=1).one()
+    # stop_now = db.session.query(Stop).filter_by(id=3).one()
+    # line_direction = db.session.query(LineDirection).filter_by(id_stop=16).one()
+    # time_info['line_direction'] = line_direction.stop.stop_name
+    # time_info['selected_line'] = line_now.line_name
+    # time_info['selected_stop'] = stop_now.stop_name
     # return jsonify(time_info)
     response = make_response(jsonify(time_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -257,6 +249,26 @@ def get_stop(id_stop):
     response = make_response(jsonify(stop_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+@app.route('/stops/stop/<int:stop_id>/lines')
+def stop_lines(stop_id):
+    stop = db.session.query(Stop).filter_by(id=stop_id).one()
+    stop_info = {
+        'selected_stop': stop.stop_name
+    }
+    stop_lines = []
+    directions = (db.session.query(LineDirection)
+                  .join(LineDirection.platforms)
+                  .join(LinePlatform.platform)
+                  .filter(Platform.id_stop == stop_id))
+    for d in directions:
+        line = {
+            'line_name': d.line.line_name
+        }
+        stop_lines.append(line)
+    stop_info['lines'] = stop_lines
+    return jsonify(stop_info)
+
 
 
 @app.route('/departures/<int:stop_id>', methods=['GET'])
