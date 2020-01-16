@@ -190,7 +190,8 @@ def home():
         '/lines/line/{lineid}': 'one line in both directions',
         '/lines/line/{lineid}/{idstop}': 'one line in one direction',
         '/stops/stop/{idstop}': 'one stop and its lines',
-        '/departures/{idstop}': 'nearest departures from one stop'
+        '/departures/{idstop}': 'nearest departures from one stop',
+        '/stops/stop/<int:stop_id>/lines': 'all lines on one stop'
     }
     resp = make_response(jsonify(routes_info))
     resp.headers['Access-Control-Allow-Origin'] = '*'
