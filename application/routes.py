@@ -32,16 +32,12 @@ def lines():
     data = []
     for linka in linky:
         smer = []
-        current_line = linka.id
         x = {
             'id': linka.id,
             'name': linka.line_name
         }
-        # data.append(x)
-        for l in linka.directions:
-            if l.id_line == current_line:
-                y = l.stop.stop_name
-                smer.append(y)
+        for d in linka.directions:
+                smer.append(d.stop.stop_name)
         x['directions'] = smer
         data.append(x)
     response = make_response(jsonify(data))
@@ -258,8 +254,8 @@ def get_stop(id_stop):
     return response
 
 
-@app.route('/tabula/<int:stop_id>', methods=['GET'])
-def tabula(stop_id):
+@app.route('/departures/<int:stop_id>', methods=['GET'])
+def departures(stop_id):
     stop = db.session.query(Stop).filter_by(id=stop_id).one()
     stop_info = {
         'selected_stop': stop.stop_name
