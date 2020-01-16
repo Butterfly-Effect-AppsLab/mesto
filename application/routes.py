@@ -32,16 +32,12 @@ def lines():
     data = []
     for linka in linky:
         smer = []
-        current_line = linka.id
         x = {
             'id': linka.id,
             'name': linka.line_name
         }
-        # data.append(x)
-        for l in linka.directions:
-            if l.id_line == current_line:
-                y = l.stop.stop_name
-                smer.append(y)
+        for d in linka.directions:
+                smer.append(d.stop.stop_name)
         x['directions'] = smer
         data.append(x)
     response = make_response(jsonify(data))
@@ -186,11 +182,16 @@ def momo(id_line):
 
 @app.route("/")
 def home():
-    resp = make_response(jsonify({'some': 'data'}))
-    resp.headers['Access-Control-Allow-Origin'] = '*'
-    x = {
-        'some': 'data'
+    routes_info = {
+        '/lines': 'lines with their directions',
+        '/stops': 'all stops',
+        '/lines/line/{lineid}': 'one line in both directions',
+        '/lines/line/{lineid}/{idstop}': 'one line in one direction',
+        '/stops/stop/{idstop}': 'one stop and its lines',
+        '/departures/{idstop}': 'nearest departures from one stop'
     }
+    resp = make_response(jsonify(routes_info))
+    resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
 
@@ -258,8 +259,8 @@ def get_stop(id_stop):
     return response
 
 
-@app.route('/tabula/<int:stop_id>', methods=['GET'])
-def tabula(stop_id):
+@app.route('/departures/<int:stop_id>', methods=['GET'])
+def departures(stop_id):
     stop = db.session.query(Stop).filter_by(id=stop_id).one()
     stop_info = {
         'selected_stop': stop.stop_name
