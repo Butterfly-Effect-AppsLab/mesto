@@ -110,6 +110,7 @@ def favourite_stops():
 
 @app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
 def test(line_name, line_direction):
+    line_info = []
     line, direction = (db.session.query(Line, LineDirection)
                        .join(Line.directions)
                        .filter(
@@ -132,9 +133,9 @@ def test(line_name, line_direction):
         stops.append(stop)
 
     line_data['stops'] = stops
-
+    line_info.append(line_data)
     # return jsonify(line_data)
-    response = make_response(jsonify(line_data))
+    response = make_response(jsonify(line_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
