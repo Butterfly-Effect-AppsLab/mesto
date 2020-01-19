@@ -191,16 +191,22 @@ def home():
         '/lines/line/{lineid}/{idstop}': 'one line in one direction',
         '/stops/stop/{idstop}': 'one stop and its lines',
         '/departures/{idstop}': 'nearest departures from one stop',
-        '/stops/stop/<int:stop_id>/lines': 'all lines on one stop'
+        '/stops/stop/<int:stop_id>/lines': 'all lines on one stop',
+        '/timetable/<day_tipe>': ''
     }
     resp = make_response(jsonify(routes_info))
     resp.headers['Access-Control-Allow-Origin'] = '*'
     return resp
 
 
-@app.route('/timetable', methods=['GET'])
-def timetable():
-
+@app.route('/timetable/<weekday>', methods=['GET'])
+def timetable(weekday):
+    if weekday == 'work':
+        day_type = 1
+    if weekday == 'holiday':
+        day_type = 2
+    if weekday == 'offDays':
+        day_type = 3
     ###############################################
     #### daytype determination is missing #########
     ###############################################
@@ -208,7 +214,7 @@ def timetable():
     times = db.session.query(Timetable).filter(Timetable.id_line == '1',
                                                Timetable.line_direction.has(id_stop=16),
                                                Timetable.platform.has(id_stop=3),
-                                               Timetable.type == 1)
+                                               Timetable.type == day_type)
     time_info = {}
     timetable = {}
     for time in times:
@@ -268,7 +274,9 @@ def stop_lines(stop_id):
         }
         stop_lines.append(line)
     stop_info['lines'] = stop_lines
-    return jsonify(stop_info)
+    response = make_response(jsonify(stop_info))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
 
 
 
