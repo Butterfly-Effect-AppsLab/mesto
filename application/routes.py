@@ -84,7 +84,7 @@ def add_user():
 
 @app.route('/favourites/line', methods=['POST'])
 def favourite_lines():
-    # id_user = request.form['id_user']
+    id_user = request.json['id_user']
     # id_platform = request.form['id_platform']
     # id_line = request.form['id_line']
     # id_direction = request.form['id_direction']
@@ -167,7 +167,7 @@ def momo(id_line):
     line = db.session.query(LineDirection).filter(LineDirection.id_line == id_line).order_by(LineDirection.id.desc()).first()
     direction_spat = {}
     direction_spat['direction'] = line.stop.stop_name
-    direction_spat['direction_id'] = line.id_stop
+    direction_spat['id_direction'] = line.id_stop
     stops2 = []
     for stop in line.platforms:
         stop = {
@@ -209,9 +209,6 @@ def timetable(weekday):
         day_type = 2
     if weekday == 'offDays':
         day_type = 3
-    ###############################################
-    #### daytype determination is missing #########
-    ###############################################
 
     times = db.session.query(Timetable).filter(Timetable.id_line == '1',
                                                Timetable.line_direction.has(id_stop=16),
@@ -227,13 +224,6 @@ def timetable(weekday):
         timetable[str_hour].append(str_minute)
     timetable = [{'hour': hour, 'minutes': minutes} for hour, minutes in timetable.items()]
     time_info['weekday'] = timetable
-    # line_now = db.session.query(Line).filter_by(id=1).one()
-    # stop_now = db.session.query(Stop).filter_by(id=3).one()
-    # line_direction = db.session.query(LineDirection).filter_by(id_stop=16).one()
-    # time_info['line_direction'] = line_direction.stop.stop_name
-    # time_info['selected_line'] = line_now.line_name
-    # time_info['selected_stop'] = stop_now.stop_name
-    # return jsonify(time_info)
     response = make_response(jsonify(time_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
