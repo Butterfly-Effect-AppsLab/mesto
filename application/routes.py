@@ -1,7 +1,7 @@
 from flask import request, render_template, make_response, Response
 from datetime import datetime as dt
 from flask import current_app as app
-from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType
+from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType, LineType
 from flask import jsonify
 from datetime import datetime
 from sqlalchemy import and_, desc, text, distinct
@@ -119,6 +119,7 @@ def test(line_name, line_direction):
     line_data = {
         'name': line.line_name,
         'direction': direction.stop.stop_name,
+        'line_type': line.id_line_type
     }
 
     stops = []
