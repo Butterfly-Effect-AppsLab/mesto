@@ -201,8 +201,8 @@ def home():
     return resp
 
 
-@app.route('/timetable/<weekday>', methods=['GET'])
-def timetable(weekday):
+@app.route('/timetable/<int:id_line>/<int:id_direction>/<int:id_stop>/<weekday>', methods=['GET'])
+def timetable(id_line, id_direction, id_stop, weekday):
     if weekday == 'work':
         day_type = 1
     if weekday == 'holiday':
@@ -210,10 +210,11 @@ def timetable(weekday):
     if weekday == 'offDays':
         day_type = 3
 
-    times = db.session.query(Timetable).filter(Timetable.id_line == '1',
-                                               Timetable.line_direction.has(id_stop=16),
-                                               Timetable.platform.has(id_stop=3),
+    times = db.session.query(Timetable).filter(Timetable.id_line == id_line,
+                                               Timetable.line_direction.has(id_stop=id_direction),
+                                               Timetable.platform.has(id_stop=id_stop),
                                                Timetable.type == day_type)
+    # try with line_id = 1, line_direction = 16, stop_id = 3 = /timetable/1/16/3/1
     time_info = {}
     timetable = {}
     for time in times:
