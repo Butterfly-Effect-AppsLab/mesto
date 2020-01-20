@@ -128,7 +128,8 @@ def test(line_name, line_direction):
         stop = {
             'stop_name': platform.platform.stop.stop_name,
             'request_stop': platform.request_stop,
-            'time': platform.time_span
+            'time': platform.time_span,
+            'id_stop': platform.platform.id_stop
         }
         stops.append(stop)
 
