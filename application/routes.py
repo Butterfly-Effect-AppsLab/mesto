@@ -225,7 +225,7 @@ def timetable(id_line, id_direction, id_stop, weekday):
             timetable[str_hour] = []
         timetable[str_hour].append(str_minute)
     timetable = [{'hour': hour, 'minutes': minutes} for hour, minutes in timetable.items()]
-    time_info['weekday'] = timetable
+    time_info[weekday] = timetable
     response = make_response(jsonify(time_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
