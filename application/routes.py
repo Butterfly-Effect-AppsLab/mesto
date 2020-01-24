@@ -25,6 +25,30 @@ def stops():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+@app.route('/stopstest', methods=['GET'])
+def testlines():
+    platforms = (db.session.query(LinePlatform))
+
+    stops = {}
+    for d in platforms:
+        stop = d.platform.stop.stop_name
+        if (stop) not in stops:
+            stops[stop] = []
+        if d.line_direction.line.id not in stops[stop]:
+            stops[stop].append(d.line_direction.line.id)
+            stops[stop].append(d.line_direction.line.line_name)
+    return jsonify(stops)
+
+# takyto zoznam:
+ # timetable = {}
+ # for time in times:
+ #        str_hour = str(time.departure_hour).zfill(2)
+ #        str_minute = str(time.departure_minute).zfill(2)
+ #        if (str_hour) not in timetable:
+ #            timetable[str_hour] = []
+ #        timetable[str_hour].append(str_minute)
+ #    timetable = [{'hour': hour, 'minutes': minutes} for hour, minutes in timetable.items()]
+
 
 @app.route('/lines', methods=['GET'])
 def lines():
@@ -193,9 +217,10 @@ def home():
         '/lines/line/{lineid}': 'one line in both directions',
         '/lines/line/{lineid}/{idstop}': 'one line in one direction',
         '/stops/stop/{idstop}': 'one stop and its lines',
-        '/departures/{idstop}': 'nearest departures from one stop',
+        '/departures/{idstop}': '3 nearest departures from one stop',
         '/stops/stop/<int:stop_id>/lines': 'all lines on one stop',
-        '/timetable/<day_tipe>': ''
+        '/timetable/{idline}/{iddirection}/{idstop}/{daytype}': 'all departure times for one line',
+        '/line_departures/{id_line}/{id_direction}/{id_stop}': '3 nearest departures for one line'
     }
     resp = make_response(jsonify(routes_info))
     resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -278,19 +303,20 @@ def stop_lines(stop_id):
 def departures(stop_id):
     stop = db.session.query(Stop).filter_by(id=stop_id).one()
     stop_info = {
-        'selected_stop': stop.stop_name
+        'stop_name': stop.stop_name,
+        'stop_id': stop.id
     }
-    stop_lines = []
-    directions = (db.session.query(LineDirection)
-                  .join(LineDirection.platforms)
-                  .join(LinePlatform.platform)
-                  .filter(Platform.id_stop == stop_id))
-    for d in directions:
-        line = {
-            'line_name': d.line.line_name
-        }
-        stop_lines.append(line)
-    stop_info['lines'] = stop_lines
+    # stop_lines = []
+    # directions = (db.session.query(LineDirection)
+    #               .join(LineDirection.platforms)
+    #               .join(LinePlatform.platform)
+    #               .filter(Platform.id_stop == stop_id))
+    # for d in directions:
+    #     line = {
+    #         'line_name': d.line.line_name
+    #     }
+    #     stop_lines.append(line)
+    # stop_info['lines'] = stop_lines
 
     hour = datetime.now().hour
     min = datetime.now().minute
@@ -300,25 +326,78 @@ def departures(stop_id):
                                             Timetable.platform.has(id_stop=stop_id),
                                             Timetable.type == 1).order_by(text(
                 '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
-                                            .params(hour=hour,min=min).limit(5)
+                                            .params(hour=hour,min=min).limit(3)
         return times
     times = get_schedule(hour, min)
     nearest = []
+
+    def time_until(dep_hour, dep_min):
+        dep_time = datetime.now().replace(hour=dep_hour, minute=dep_min)
+        time_diff = datetime.now() - dep_time
+        return abs(int(time_diff.total_seconds() / 60))
+
     for time in times:
         y = {
-            'hour': str(time.departure_hour).zfill(2),
-            'minute': str(time.departure_minute).zfill(2),
+            # 'hour': str(time.departure_hour).zfill(2),
+            # 'minute': str(time.departure_minute).zfill(2),
             'low_rise': time.low_rise,
-            'line': time.line.line_name,
-            'line_direction': time.line_direction.stop.stop_name
+            'line_name': time.line.line_name,
+            'line_direction': time.line_direction.stop.stop_name,
+            'arrival_time': time_until(time.departure_hour, time.departure_minute)
         }
         nearest.append(y)
     #get nearest departures from stop
-    stop_info['departures'] = nearest
+    stop_info['lines'] = nearest
     # return jsonify(stop_info)
     response = make_response(jsonify(stop_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+@app.route('/line_departures/<id_line>/<id_direction>/<id_stop>', methods=['GET'])
+def closest(id_line, id_direction, id_stop):
+    # line_id = 1
+    # line_direction = 3
+    # stop_id = 9
+    day_type = 1
+    line = db.session.query(LineDirection).filter_by(id_line= id_line, id_stop = id_direction).one()
+    line_nearest = {}
+    line_nearest['line_id'] = line.id_line
+    line_nearest['line_direction'] = line.stop.stop_name
+    hour = datetime.now().hour
+    min = datetime.now().minute
+    line_closest = []
+
+
+    times = db.session.query(Timetable).filter(Timetable.id_line == id_line,
+                                               Timetable.line_direction.has(id_stop=id_direction),
+                                               Timetable.platform.has(id_stop=id_stop),
+                                               Timetable.type == day_type).order_by(text(
+                '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
+                                            .params(hour=hour,min=min).limit(3)
+
+
+    x = 1
+    for time in times:
+
+        nearest = {
+            # 'hour': str(time.departure_hour).zfill(2),
+            # 'minute': str(time.departure_minute).zfill(2)
+            str(x)+ 'closest': str(time.departure_hour).zfill(2)+ ':' + str(time.departure_minute).zfill(2)
+        }
+        line_closest.append(nearest)
+        x += 1
+
+    line_nearest['closest_departures'] = line_closest
+    line_nearest['delays'] = []
+    response = make_response(jsonify(line_nearest))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+
+
+
+
 
 
 
