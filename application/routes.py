@@ -25,19 +25,47 @@ def stops():
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
-@app.route('/stopstest', methods=['GET'])
-def testlines():
-    platforms = (db.session.query(LinePlatform))
+# @app.route('/stopstest', methods=['GET'])
+# def testlines():
+#     platforms = (db.session.query(LinePlatform))
+#     stops = []
+#     for stop in platforms:
+#         this_stop = stop.platform.id_stop
+#         stp = {
+#             'stop_name': stop.platform.stop.stop_name,
+#             'stop_id': stop.platform.id_stop
+#         }
+#
+#         lines = []
+#         for line in platforms:
+#             if line.platform.id_stop == this_stop and line.line_direction.id_line not in lines:
+#                 x = {
+#                     'line_id': line.line_direction.id_line,
+#                     'line_name': line.line_direction.line.line_name
+#                 }
+#                 # lines.append(line.line_direction.id_line)
+#                 # lines.append(line.line_direction.line.line_name)
+#                 lines.append(x)
+#         stp['lines'] = lines
+#         stops.append(stp)
+#     #stops = [{'hour': hour, 'minutes': minutes} for hour, minutes in timetable.items()]
+#     return jsonify(stops)
 
-    stops = {}
-    for d in platforms:
-        stop = d.platform.stop.stop_name
-        if (stop) not in stops:
-            stops[stop] = []
-        if d.line_direction.line.id not in stops[stop]:
-            stops[stop].append(d.line_direction.line.id)
-            stops[stop].append(d.line_direction.line.line_name)
-    return jsonify(stops)
+
+
+    # platforms = (db.session.query(LinePlatform))
+    #
+    # stops = {}
+    # for d in platforms:
+    #     stop = d.platform.stop.stop_name
+    #
+    #     if (stop) not in stops:
+    #
+    #         stops[stop] = []
+    #     if d.line_direction.line.id not in stops[stop]:
+    #         stops[stop].append(d.line_direction.line.id)
+    #         stops[stop].append(d.line_direction.line.line_name)
+    # return jsonify(stops)
 
 # takyto zoznam:
  # timetable = {}
@@ -287,11 +315,14 @@ def stop_lines(stop_id):
                   .join(LineDirection.platforms)
                   .join(LinePlatform.platform)
                   .filter(Platform.id_stop == stop_id))
+
     for d in directions:
         line = {
-            'line_name': d.line.line_name
+            'line_name': d.line.line_name,
+            'line_id': d.line.id
         }
-        stop_lines.append(line)
+        if not any(dict['line_name'] == d.line.line_name for dict in stop_lines):
+            stop_lines.append(line)
     stop_info['lines'] = stop_lines
     response = make_response(jsonify(stop_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -392,6 +423,20 @@ def closest(id_line, id_direction, id_stop):
     response = make_response(jsonify(line_nearest))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+@app.route('/onedirection', methods=['GET'])
+def one():
+    platforms = db.session.query(LinePlatform)
+    momo = []
+    for p in platforms:
+        x = {
+            'latitude': str(p.platform.lat),
+            'longtitude': str(p.platform.long),
+            'stop_name': p.platform.stop.stop_name,
+            'id_platform': p.platform.id
+        }
+        momo.append(x)
+    return jsonify(momo)
 
 
 
