@@ -241,14 +241,16 @@ def momo(id_line):
 def home():
     routes_info = {
         '/lines': 'lines with their directions',
-        '/stops': 'all stops',
+        '/stops': 'all stops (general)',
         '/lines/line/{lineid}': 'one line in both directions',
         '/lines/line/{lineid}/{idstop}': 'one line in one direction',
         '/stops/stop/{idstop}': 'one stop and its lines',
         '/departures/{idstop}': '3 nearest departures from one stop',
-        '/stops/stop/<int:stop_id>/lines': 'all lines on one stop',
+        '/stops/stop/{idstop}/lines': 'all lines on one stop',
         '/timetable/{idline}/{iddirection}/{idstop}/{daytype}': 'all departure times for one line',
-        '/line_departures/{id_line}/{id_direction}/{id_stop}': '3 nearest departures for one line'
+        '/line_departures/{id_line}/{id_direction}/{id_stop}': '3 nearest departures for one line',
+        '/platform/directions': 'all individual stops with GPS coordinates',
+        '/platform/directions/{id_platform}': '3 nearest line departures in one direction'
     }
     resp = make_response(jsonify(routes_info))
     resp.headers['Access-Control-Allow-Origin'] = '*'
@@ -361,11 +363,11 @@ def departures(stop_id):
         return times
     times = get_schedule(hour, min)
     nearest = []
-
-    def time_until(dep_hour, dep_min):
-        dep_time = datetime.now().replace(hour=dep_hour, minute=dep_min)
-        time_diff = datetime.now() - dep_time
-        return abs(int(time_diff.total_seconds() / 60))
+    #
+    # def time_until(dep_hour, dep_min):
+    #     dep_time = datetime.now().replace(hour=dep_hour, minute=dep_min)
+    #     time_diff = datetime.now() - dep_time
+    #     return abs(int(time_diff.total_seconds() / 60))
 
     for time in times:
         y = {
@@ -424,48 +426,105 @@ def closest(id_line, id_direction, id_stop):
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
-@app.route('/onedirection', methods=['GET'])
-def one():
-    platforms = db.session.query(LinePlatform)
+# @app.route('/onedirection', methods=['GET'])
+# def one():
+#     platforms = db.session.query(LinePlatform)
+#
+#     def get_nearest(platform_id):
+#         hour = datetime.now().hour
+#         min = datetime.now().minute
+#         times = db.session.query(Timetable).filter(
+#             Timetable.id_platform==platform_id,
+#             Timetable.type == 1).order_by(text(
+#             '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
+#             .params(hour=hour, min=min).limit(3)
+#
+#         nearest = []
+#
+#         for time in times:
+#             y = {
+#                 'low_rise': time.low_rise,
+#                 'line_name': time.line.line_name,
+#                 'line_direction': time.line_direction.stop.stop_name,
+#                 'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2)
+#             }
+#             nearest.append(y)
+#         return nearest
+#     momo = []
+#     for p in platforms:
+#         this_platform = p.id_platform
+#         x = {
+#             'latitude': str(p.platform.lat),
+#             'longtitude': str(p.platform.long),
+#             'stop_name': p.platform.stop.stop_name,
+#             'id_platform': p.platform.id
+#         }
+#         lines = []
+#         for line in platforms:
+#             if line.id_platform == this_platform and line.line_direction.id_line not in lines:
+#                 lines.append(line.line_direction.id_line)
+#         x['lines'] = lines
+#         x['departures'] = get_nearest(this_platform)
+#         if not any(dict['id_platform'] == p.id_platform for dict in momo):
+#             momo.append(x)
+#     return jsonify(momo)
 
-    def get_nearest(platform_id):
-        hour = datetime.now().hour
-        min = datetime.now().minute
-        times = db.session.query(Timetable).filter(
-            Timetable.id_platform==platform_id,
-            Timetable.type == 1).order_by(text(
-            '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
-            .params(hour=hour, min=min).limit(3)
-
-        nearest = []
-
-        for time in times:
-            y = {
-                'low_rise': time.low_rise,
-                'line_name': time.line.line_name,
-                'line_direction': time.line_direction.stop.stop_name,
-                'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2)
-            }
-            nearest.append(y)
-        return nearest
-    momo = []
-    for p in platforms:
-        this_platform = p.id_platform
-        x = {
-            'latitude': str(p.platform.lat),
-            'longtitude': str(p.platform.long),
-            'stop_name': p.platform.stop.stop_name,
-            'id_platform': p.platform.id
+@app.route('/platform/directions', methods=['GET'])
+def directions():
+    platforms = db.session.query(Platform)
+    platform_list = []
+    for platform in platforms:
+        plat = {
+            'platform_id': platform.id,
+            'platform_lat': str(platform.lat),
+            'platform_long': str(platform.long),
+            'platform_name': platform.platform_name
         }
-        lines = []
-        for line in platforms:
-            if line.id_platform == this_platform and line.line_direction.id_line not in lines:
-                lines.append(line.line_direction.id_line)
-        x['lines'] = lines
-        x['departures'] = get_nearest(this_platform)
-        if not any(dict['id_platform'] == p.id_platform for dict in momo):
-            momo.append(x)
-    return jsonify(momo)
+        platform_list.append(plat)
+    response = make_response(jsonify(platform_list))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/platform/directions/<int:platform_id>')
+def directions_arrivals(platform_id):
+    platform = db.session.query(Platform).filter(Platform.id==platform_id).one()
+    platform_detail = {}
+    platform_detail['platform_id'] = platform.id
+    platform_detail['platform_name'] = platform.platform_name
+
+    hour = datetime.now().hour
+    min = datetime.now().minute
+
+    times = db.session.query(Timetable).filter(
+        Timetable.id_platform==platform_id,
+        Timetable.type == 1).order_by(text(
+        '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
+        .params(hour=hour, min=min).limit(3)
+
+    nearest = []
+
+    for time in times:
+        y = {
+            'low_rise': time.low_rise,
+            'line_name': time.line.line_name,
+            'line_direction': time.line_direction.stop.stop_name,
+            'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2),
+            'time_until_arrival': time_until(time.departure_hour, time.departure_minute)
+        }
+        nearest.append(y)
+    platform_detail['departures'] = nearest
+    response = make_response(jsonify(platform_detail))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+def time_until(dep_hour, dep_min):
+    dep_time = datetime.now().replace(hour=dep_hour, minute=dep_min)
+    time_diff = datetime.now() - dep_time
+    return abs(int(time_diff.total_seconds() / 60))
+
+
 
 
 
