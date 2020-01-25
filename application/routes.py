@@ -427,16 +427,50 @@ def closest(id_line, id_direction, id_stop):
 @app.route('/onedirection', methods=['GET'])
 def one():
     platforms = db.session.query(LinePlatform)
+
+    def get_nearest(platform_id):
+        hour = datetime.now().hour
+        min = datetime.now().minute
+        times = db.session.query(Timetable).filter(
+            Timetable.id_platform==platform_id,
+            Timetable.type == 1).order_by(text(
+            '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
+            .params(hour=hour, min=min).limit(3)
+
+        nearest = []
+
+        for time in times:
+            y = {
+                'low_rise': time.low_rise,
+                'line_name': time.line.line_name,
+                'line_direction': time.line_direction.stop.stop_name,
+                'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2)
+            }
+            nearest.append(y)
+        return nearest
     momo = []
     for p in platforms:
+        this_platform = p.id_platform
         x = {
             'latitude': str(p.platform.lat),
             'longtitude': str(p.platform.long),
             'stop_name': p.platform.stop.stop_name,
             'id_platform': p.platform.id
         }
-        momo.append(x)
+        lines = []
+        for line in platforms:
+            if line.id_platform == this_platform and line.line_direction.id_line not in lines:
+                lines.append(line.line_direction.id_line)
+        x['lines'] = lines
+        x['departures'] = get_nearest(this_platform)
+        if not any(dict['id_platform'] == p.id_platform for dict in momo):
+            momo.append(x)
     return jsonify(momo)
+
+
+
+
+
 
 
 
