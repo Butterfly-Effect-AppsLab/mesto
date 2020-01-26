@@ -280,7 +280,7 @@ def departures(stop_id):
                                             Timetable.platform.has(id_stop=stop_id),
                                             Timetable.type == daytype).order_by(text(
                 '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
-                                            .params(hour=hour,min=min).limit(3)
+                                            .params(hour=hour,min=min).limit(5)
         return times
     times = get_schedule(hour, min)
     nearest = []
@@ -371,7 +371,7 @@ def directions_arrivals(platform_id):
         Timetable.id_platform==platform_id,
         Timetable.type == daytype).order_by(text(
         '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
-        .params(hour=hour, min=min).limit(3)
+        .params(hour=hour, min=min).limit(5)
 
     nearest = []
 
@@ -380,8 +380,8 @@ def directions_arrivals(platform_id):
             'low_rise': time.low_rise,
             'line_name': time.line.line_name,
             'line_direction': time.line_direction.stop.stop_name,
-            'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2),
-            'time_until_arrival': time_until(time.departure_hour, time.departure_minute)
+            #'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2),
+            'arrival_time': time_until(time.departure_hour, time.departure_minute)
         }
         nearest.append(y)
     platform_detail['departures'] = nearest
