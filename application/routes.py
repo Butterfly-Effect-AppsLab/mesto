@@ -301,6 +301,47 @@ def departures(stop_id):
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
+
+@app.route('/departures/<int:stop_id>/<int:line_limit>', methods=['GET'])
+def departures_limit(stop_id, line_limit):
+
+    stop = db.session.query(Stop).filter_by(id=stop_id).one()
+
+    stop_info = {
+        'stop_name': stop.stop_name,
+        'stop_id': stop.id
+    }
+
+    hour = datetime.now().hour
+    min = datetime.now().minute
+    daytype = get_daytype()
+
+    def get_schedule(hour, min):
+        times = db.session.query(Timetable).filter(
+                                            Timetable.platform.has(id_stop=stop_id),
+                                            Timetable.type == daytype).order_by(text(
+                '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
+                                            .params(hour=hour,min=min).limit(line_limit)
+        return times
+    times = get_schedule(hour, min)
+    nearest = []
+
+    for time in times:
+        y = {
+            # 'hour': str(time.departure_hour).zfill(2),
+            # 'minute': str(time.departure_minute).zfill(2),
+            'low_rise': time.low_rise,
+            'line_name': time.line.line_name,
+            'line_direction': time.line_direction.stop.stop_name,
+            'arrival_time': time_until(time.departure_hour, time.departure_minute)
+        }
+        nearest.append(y)
+    stop_info['lines'] = nearest
+
+    response = make_response(jsonify(stop_info))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
 @app.route('/line_departures/<id_line>/<id_direction>/<id_stop>', methods=['GET'])
 def closest(id_line, id_direction, id_stop):
 
@@ -372,6 +413,43 @@ def directions_arrivals(platform_id):
         Timetable.type == daytype).order_by(text(
         '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
         .params(hour=hour, min=min).limit(5)
+
+    nearest = []
+
+    for time in times:
+        y = {
+            'low_rise': time.low_rise,
+            'line_name': time.line.line_name,
+            'line_direction': time.line_direction.stop.stop_name,
+            #'arrival_time': str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2),
+            'arrival_time': time_until(time.departure_hour, time.departure_minute)
+        }
+        nearest.append(y)
+    platform_detail['departures'] = nearest
+
+    response = make_response(jsonify(platform_detail))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/platform/directions/<int:platform_id>/<int:line_limit>')
+def directions_arrivals_limit(platform_id, line_limit):
+
+    platform = db.session.query(Platform).filter(Platform.id==platform_id).one()
+
+    platform_detail = {}
+    platform_detail['platform_id'] = platform.id
+    platform_detail['platform_name'] = platform.platform_name
+
+    hour = datetime.now().hour
+    min = datetime.now().minute
+    daytype = get_daytype()
+
+    times = db.session.query(Timetable).filter(
+        Timetable.id_platform==platform_id,
+        Timetable.type == daytype).order_by(text(
+        '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute')) \
+        .params(hour=hour, min=min).limit(line_limit)
 
     nearest = []
 
