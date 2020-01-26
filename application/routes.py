@@ -410,16 +410,10 @@ def closest(id_line, id_direction, id_stop):
                                                Timetable.type == day_type).order_by(text(
                 '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
                                             .params(hour=hour,min=min).limit(3)
+    departures = []
     for time in times:
-
-        nearest = {
-            # 'hour': str(time.departure_hour).zfill(2),
-            # 'minute': str(time.departure_minute).zfill(2)
-            'closest': str(time.departure_hour).zfill(2)+ ':' + str(time.departure_minute).zfill(2)
-        }
-        line_closest.append(nearest)
-
-    line_nearest['closest_departures'] = line_closest
+           departures.append(str(time.departure_hour).zfill(2) + ':' + str(time.departure_minute).zfill(2))
+    line_nearest['closest_departures'] = departures
     line_nearest['delays'] = []
     response = make_response(jsonify(line_nearest))
     response.headers['Access-Control-Allow-Origin'] = '*'

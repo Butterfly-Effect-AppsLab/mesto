@@ -1,6 +1,6 @@
 from . import db
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, text, Boolean
+from sqlalchemy import BigInteger, Column, Date, DateTime, ForeignKey, Integer, Numeric, String, Text, text, Boolean, CHAR
 from sqlalchemy.inspection import inspect
 from sqlalchemy.orm import relationship
 from sqlalchemy.ext.declarative import declarative_base
@@ -145,6 +145,7 @@ class Timetable(db.Model):
     type = Column(ForeignKey('timetable_type.indication'), nullable=False)
     low_rise = Column('low-rise', Boolean, nullable=False)
     request_stop = Column(Boolean)
+    special_type = Column(CHAR(1))
 
     line_direction = relationship('LineDirection')
     line = relationship('Line')
@@ -157,3 +158,11 @@ class TimetableType(db.Model):
 
     indication = Column(BigInteger, primary_key=True)
     description = Column(String(100), nullable=False)
+
+class Calendar(db.Model):
+    __tablename__ = 'calendar'
+
+    id = Column(BigInteger, primary_key=True)
+    type = Column(BigInteger, nullable=False)
+    time_from = Column(BigInteger, nullable=False)
+    time_to = Column(BigInteger, nullable=False)
