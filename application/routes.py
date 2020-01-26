@@ -8,20 +8,22 @@ from sqlalchemy import and_, desc, text, distinct
 import json
 
 
-@app.route('/stops', methods=['GET'])
-def stops():
-    stops = Stop.query.all()
-
-    output = []
-
-    for stop in stops:
-        x = {
-            'stop_name': stop.stop_name,
-            'stop_id': stop.id
-        }
-        output.append(x)
-
-    response = make_response(jsonify({'stops': output}))
+@app.route("/")
+def home():
+    routes_info = {
+        '/lines': 'lines with their directions',
+        '/stops': 'all stops (general)',
+        '/lines/line/{lineid}': 'one line in both directions',
+        '/lines/line/{lineid}/{idstop}': 'one line in one direction',
+        '/stops/stop/{idstop}': 'one stop and its lines',
+        '/departures/{idstop}': '3 nearest departures from one stop',
+        '/stops/stop/{idstop}/lines': 'all lines on one stop',
+        '/timetable/{idline}/{iddirection}/{idstop}/{daytype}': 'all departure times for one line',
+        '/line_departures/{id_line}/{id_direction}/{id_stop}': '3 nearest departures for one line',
+        '/platform/directions': 'all individual stops with GPS coordinates',
+        '/platform/directions/{id_platform}': '3 nearest line departures in one direction'
+    }
+    response = make_response(jsonify(routes_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -41,6 +43,24 @@ def lines():
         x['directions'] = smer
         data.append(x)
     response = make_response(jsonify(data))
+    response.headers['Access-Control-Allow-Origin'] = '*'
+    return response
+
+
+@app.route('/stops', methods=['GET'])
+def stops():
+    stops = Stop.query.all()
+
+    output = []
+
+    for stop in stops:
+        x = {
+            'stop_name': stop.stop_name,
+            'stop_id': stop.id
+        }
+        output.append(x)
+
+    response = make_response(jsonify({'stops': output}))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -159,26 +179,6 @@ def line_detail(id_line):
 
     # return jsonify(line_stops)
     response = make_response(jsonify(line_stops))
-    response.headers['Access-Control-Allow-Origin'] = '*'
-    return response
-
-
-@app.route("/")
-def home():
-    routes_info = {
-        '/lines': 'lines with their directions',
-        '/stops': 'all stops (general)',
-        '/lines/line/{lineid}': 'one line in both directions',
-        '/lines/line/{lineid}/{idstop}': 'one line in one direction',
-        '/stops/stop/{idstop}': 'one stop and its lines',
-        '/departures/{idstop}': '3 nearest departures from one stop',
-        '/stops/stop/{idstop}/lines': 'all lines on one stop',
-        '/timetable/{idline}/{iddirection}/{idstop}/{daytype}': 'all departure times for one line',
-        '/line_departures/{id_line}/{id_direction}/{id_stop}': '3 nearest departures for one line',
-        '/platform/directions': 'all individual stops with GPS coordinates',
-        '/platform/directions/{id_platform}': '3 nearest line departures in one direction'
-    }
-    response = make_response(jsonify(routes_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
 
@@ -346,7 +346,8 @@ def directions():
             'platform_long': str(platform.long),
             'platform_name': platform.platform_name
         }
-        platform_list.append(plat)
+        if platform.lat is not None and platform.long is not None:
+            platform_list.append(plat)
     platform_info['platforms'] = platform_list
     response = make_response(jsonify(platform_info))
     response.headers['Access-Control-Allow-Origin'] = '*'
@@ -406,9 +407,6 @@ def get_daytype():
             date_type = d.type
     return date_type
 
-@app.route('/daytype', methods=['GET'])
-def type():
-    return str(get_daytype())
 
 
 
