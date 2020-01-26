@@ -125,7 +125,7 @@ def test(line_name, line_direction):
         stop = {
             'stop_name': platform.platform.stop.stop_name,
             'request_stop': platform.request_stop,
-            'time': platform.time_span,
+            #'time': platform.time_span,
             'id_stop': platform.platform.id_stop
         }
         stops.append(stop)
@@ -156,7 +156,7 @@ def line_detail(id_line):
         stop = {
             'stop_name': stop.platform.stop.stop_name,
             'request_stop': stop.request_stop,
-            'time': stop.time_span
+            #'time': stop.time_span
         }
         stops.append(stop)
     direction_tam['stops_list'] = stops
@@ -171,7 +171,7 @@ def line_detail(id_line):
         stop = {
             'stop_name': stop.platform.stop.stop_name,
             'request_stop': stop.request_stop,
-            'time': stop.time_span
+            #'time': stop.time_span
         }
         stops2.append(stop)
     direction_spat['stops_list'] = stops
