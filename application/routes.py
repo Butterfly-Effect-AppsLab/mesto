@@ -275,6 +275,7 @@ def timetable(id_line, id_direction, id_stop, weekday):
     timetable = {}
     for time in times:
         str_hour = str(time.departure_hour).zfill(2)
+        #if time.special_type:
         str_minute = str(time.departure_minute).zfill(2)
         if (str_hour) not in timetable:
             timetable[str_hour] = []
@@ -388,12 +389,14 @@ def departures(stop_id):
 
 @app.route('/line_departures/<id_line>/<id_direction>/<id_stop>', methods=['GET'])
 def closest(id_line, id_direction, id_stop):
+    selected_stop = db.session.query(Stop).filter(Stop.id==id_stop).one()
     # line_id = 1
     # line_direction = 3
     # stop_id = 9
     day_type = 1
     line = db.session.query(LineDirection).filter_by(id_line= id_line, id_stop = id_direction).one()
     line_nearest = {}
+    line_nearest['selected_stop'] = selected_stop.stop_name
     line_nearest['line_id'] = line.id_line
     line_nearest['line_direction'] = line.stop.stop_name
     hour = datetime.now().hour
@@ -407,18 +410,14 @@ def closest(id_line, id_direction, id_stop):
                                                Timetable.type == day_type).order_by(text(
                 '(departure_hour =:hour and departure_minute >=:min) desc, departure_hour >:hour desc, departure_hour, departure_minute'))\
                                             .params(hour=hour,min=min).limit(3)
-
-
-    x = 1
     for time in times:
 
         nearest = {
             # 'hour': str(time.departure_hour).zfill(2),
             # 'minute': str(time.departure_minute).zfill(2)
-            str(x)+ 'closest': str(time.departure_hour).zfill(2)+ ':' + str(time.departure_minute).zfill(2)
+            'closest': str(time.departure_hour).zfill(2)+ ':' + str(time.departure_minute).zfill(2)
         }
         line_closest.append(nearest)
-        x += 1
 
     line_nearest['closest_departures'] = line_closest
     line_nearest['delays'] = []
