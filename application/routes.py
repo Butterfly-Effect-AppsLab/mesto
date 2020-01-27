@@ -105,13 +105,13 @@ def stops():
 #     return "Stop has been added to favourites", 201
 
 
-@app.route('/lines/line/<line_name>/<int:line_direction>', methods=['GET'])
-def test(line_name, line_direction):
+@app.route('/lines/line/<line_id>/<int:line_direction>', methods=['GET'])
+def test(line_id, line_direction):
     line_info = []
     line, direction = (db.session.query(Line, LineDirection)
                        .join(Line.directions)
                        .filter(
-        Line.line_name == line_name,
+        Line.id == line_id,
         LineDirection.id_stop == line_direction)
                        .one())
     line_data = {
