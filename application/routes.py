@@ -61,6 +61,12 @@ def stops():
             'stop_name': stop.stop_name,
             'stop_id': stop.id
         }
+        lines = (db.session.query(Line)
+                           .join(Line.directions)
+                           .join(LineDirection.platforms)
+                           .join(LinePlatform.platform)
+                           .filter(Platform.id_stop==stop.id))
+        x['lines'] = [{'id': l.id, 'name': l.line_name} for l in lines]
         output.append(x)
 
     response = make_response(jsonify({'stops': output}))
