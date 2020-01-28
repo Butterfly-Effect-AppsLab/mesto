@@ -354,6 +354,7 @@ def closest(id_line, id_direction, id_stop):
     line_nearest['selected_stop'] = selected_stop.stop_name
     line_nearest['line_id'] = line.id_line
     line_nearest['line_direction'] = line.stop.stop_name
+    line_nearest['line_number'] = line.line.line_name
     hour = datetime.now().hour
     min = datetime.now().minute
 
