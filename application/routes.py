@@ -1,5 +1,7 @@
 from flask import request, render_template, make_response, Response
 from datetime import datetime as dt
+from datetime import timezone
+import pytz
 from flask import current_app as app
 from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType, LineType, Calendar
 from flask import jsonify
@@ -7,6 +9,7 @@ from datetime import datetime
 from sqlalchemy import and_, desc, text, distinct
 import json
 
+tz = pytz.timezone('Europe/Berlin')
 
 @app.route("/")
 def home():
@@ -63,6 +66,34 @@ def stops():
     response = make_response(jsonify({'stops': output}))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
+
+
+@app.route('/test')
+def tessssst():
+    stops = db.session.query(Stop)
+    linestops = []
+    for stop in stops:
+        current_stop = stop.id
+        x = {
+            'stop_name': stop.stop_name,
+            'stop_id': stop.id
+        }
+        stop_lines = []
+        directions = (db.session.query(LineDirection)
+                      .join(LineDirection.platforms)
+                      .join(LinePlatform.platform)
+                      .filter(Platform.id_stop == current_stop))
+
+        for d in directions:
+            line = {
+                'line_name': d.line.line_name,
+                'line_id': d.line.id
+            }
+            if not any(dict['line_name'] == d.line.line_name for dict in stop_lines):
+                stop_lines.append(line)
+        x['lines'] = stop_lines
+        linestops.append(x)
+    return jsonify (linestops)
 
 
 # @app.route('/user/add', methods=['POST'])
@@ -271,8 +302,8 @@ def departures(stop_id):
         'stop_id': stop.id
     }
 
-    hour = datetime.now().hour
-    min = datetime.now().minute
+    hour = datetime.now(tz).hour
+    min = datetime.now(tz).minute
     daytype = get_daytype()
 
     def get_schedule(hour, min):
@@ -311,9 +342,8 @@ def departures_limit(stop_id, line_limit):
         'stop_name': stop.stop_name,
         'stop_id': stop.id
     }
-
-    hour = datetime.now().hour
-    min = datetime.now().minute
+    hour = datetime.now(tz).hour
+    min = datetime.now(tz).minute
     daytype = get_daytype()
 
     def get_schedule(hour, min):
@@ -355,8 +385,8 @@ def closest(id_line, id_direction, id_stop):
     line_nearest['line_id'] = line.id_line
     line_nearest['line_direction'] = line.stop.stop_name
     line_nearest['line_number'] = line.line.line_name
-    hour = datetime.now().hour
-    min = datetime.now().minute
+    hour = datetime.now(tz).hour
+    min = datetime.now(tz).minute
 
     times = db.session.query(Timetable).filter(Timetable.id_line == id_line,
                                                Timetable.line_direction.has(id_stop=id_direction),
@@ -405,8 +435,8 @@ def directions_arrivals(platform_id):
     platform_detail['platform_id'] = platform.id
     platform_detail['platform_name'] = platform.platform_name
 
-    hour = datetime.now().hour
-    min = datetime.now().minute
+    hour = datetime.now(tz).hour
+    min = datetime.now(tz).minute
     daytype = get_daytype()
 
     times = db.session.query(Timetable).filter(
@@ -442,8 +472,8 @@ def directions_arrivals_limit(platform_id, line_limit):
     platform_detail['platform_id'] = platform.id
     platform_detail['platform_name'] = platform.platform_name
 
-    hour = datetime.now().hour
-    min = datetime.now().minute
+    hour = datetime.now(tz).hour
+    min = datetime.now(tz).minute
     daytype = get_daytype()
 
     times = db.session.query(Timetable).filter(
@@ -471,19 +501,19 @@ def directions_arrivals_limit(platform_id, line_limit):
 
 
 def time_until(dep_hour, dep_min):
-    dep_time = datetime.now().replace(hour=dep_hour, minute=dep_min)
-    time_diff = datetime.now() - dep_time
+    dep_time = datetime.now(tz).replace(hour=dep_hour, minute=dep_min)
+    time_diff = datetime.now(tz) - dep_time
     return abs(int(time_diff.total_seconds() / 60))
 
 def get_daytype():
-    date = datetime.now()
+    date = datetime.now(tz)
     date_type = 1
-    dates = db.session.query(Calendar)
-    for d in dates:
-        date_from = datetime.utcfromtimestamp(d.time_from)
-        date_to = datetime.utcfromtimestamp(d.time_to)
-        if date_from <= date <= date_to:
-            date_type = d.type
+    # dates = db.session.query(Calendar)
+    # for d in dates:
+    #     date_from = datetime.utcfromtimestamp(d.time_from)
+    #     date_to = datetime.utcfromtimestamp(d.time_to)
+    #     if date_from <= date <= date_to:
+    #         date_type = d.type
     return date_type
 
 
