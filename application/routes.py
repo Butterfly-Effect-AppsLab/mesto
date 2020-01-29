@@ -5,9 +5,10 @@ import pytz
 from flask import current_app as app
 from .models import db, Users, Stop, Line, Platform, LineDirection, LinePlatform, Timetable, TimetableType, LineType, Calendar
 from flask import jsonify
-from datetime import datetime
+from datetime import datetime, date
 from sqlalchemy import and_, desc, text, distinct
 import json
+from workalendar.europe import Slovakia
 
 tz = pytz.timezone('Europe/Berlin')
 
@@ -72,34 +73,6 @@ def stops():
     response = make_response(jsonify({'stops': output}))
     response.headers['Access-Control-Allow-Origin'] = '*'
     return response
-
-
-@app.route('/test')
-def tessssst():
-    stops = db.session.query(Stop)
-    linestops = []
-    for stop in stops:
-        current_stop = stop.id
-        x = {
-            'stop_name': stop.stop_name,
-            'stop_id': stop.id
-        }
-        stop_lines = []
-        directions = (db.session.query(LineDirection)
-                      .join(LineDirection.platforms)
-                      .join(LinePlatform.platform)
-                      .filter(Platform.id_stop == current_stop))
-
-        for d in directions:
-            line = {
-                'line_name': d.line.line_name,
-                'line_id': d.line.id
-            }
-            if not any(dict['line_name'] == d.line.line_name for dict in stop_lines):
-                stop_lines.append(line)
-        x['lines'] = stop_lines
-        linestops.append(x)
-    return jsonify (linestops)
 
 
 # @app.route('/user/add', methods=['POST'])
@@ -512,15 +485,30 @@ def time_until(dep_hour, dep_min):
     return abs(int(time_diff.total_seconds() / 60))
 
 def get_daytype():
-    date = datetime.now(tz)
     date_type = 1
-    # dates = db.session.query(Calendar)
-    # for d in dates:
-    #     date_from = datetime.utcfromtimestamp(d.time_from)
-    #     date_to = datetime.utcfromtimestamp(d.time_to)
-    #     if date_from <= date <= date_to:
-    #         date_type = d.type
+    day_today = datetime.now(tz).day
+    month_today = datetime.now(tz).month
+    year_today = datetime.now(tz).year
+    weekday = datetime.now(tz).weekday()
+    cal = Slovakia()
+    # if sviatok or sobota or nedela
+    if cal.is_working_day(date(year_today, month_today, day_today)) == False or weekday == 5 or weekday == 6:
+        return 3
+    dates = db.session.query(Calendar).filter(Calendar.type==2)
+    datum = datetime.now().replace(hour=+1)
+    for d in dates:
+        date_from = datetime.utcfromtimestamp(d.time_from)
+        date_to = datetime.utcfromtimestamp(d.time_to)
+        if date_from <= datum <= date_to:
+            return d.type
     return date_type
+
+
+
+@app.route('/test')
+def tessssst():
+    momo = get_daytype()
+    return str(momo)
 
 
 
